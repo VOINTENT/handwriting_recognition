@@ -35,6 +35,7 @@ if __name__ == '__main__':
         test_images, test_labels = data.get_own_data()
         os.chdir('..')
 
+        print(test_images.shape)
         test_predict = model.predict(test_images)
     else:
         # Загрузка стандартных тестовых данных
@@ -44,5 +45,5 @@ if __name__ == '__main__':
 
     test_predict = model.predict(test_images)
 
-    data.get_conf_mat(test_predict, test_labels)
     data.get_json(test_predict, test_labels)
+    data.get_conf_mat(test_predict, test_labels)

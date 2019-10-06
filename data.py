@@ -8,7 +8,7 @@
 from tensorflow import keras
 
 import numpy as np
-import PIL, glob, json
+import PIL, glob, json, random
 import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,8 +17,9 @@ import seaborn as sns
 
 def get_data(test_percent=0.13):
     """
-    Загрузка датасета с разделением на тренировочную и тестовую часть по
-    указанному проценту и преобразованием данных в диапазон [0..1]
+    Загрузка датасета с разделением на тренировочную и тестовую часть
+    в случайном порядке, по указанному проценту и преобразованием данных
+    в диапазон [0..1]
     """
     mnist = keras.datasets.mnist
     (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
@@ -26,13 +27,21 @@ def get_data(test_percent=0.13):
     all_images = np.append(train_images, test_images, axis=0)
     all_labels = np.append(train_labels, test_labels, axis=0)
 
+    indeces = list( range(len( all_images ) ) )
+    random.shuffle(indeces)
+
     num_test = int( len(all_images) * test_percent )
 
-    test_images = all_images[ : num_test]
-    test_labels = all_labels[ : num_test]
+    test_images = [ all_images[i] for i in indeces[ : num_test] ]
+    test_labels = [ all_labels[i] for i in indeces[ : num_test] ]
 
-    train_images = all_images[num_test : ]
-    train_labels = all_labels[num_test : ]
+    train_images = [ all_images[i] for i in indeces[num_test : ] ]
+    train_labels = [ all_labels[i] for i in indeces[num_test : ] ]
+
+    test_images = np.array(test_images)
+    test_labels = np.array(test_labels)
+    train_images = np.array(train_images)
+    train_labels = np.array(train_labels)
 
     train_images = train_images / 255.0
     test_images = test_images / 255.0
@@ -66,21 +75,24 @@ def get_conf_mat(test_predict, test_labels):
     """
     Формирование confusion matrix
     """
-    test_predict = list(map(np.argmax, test_predict) )
-    con_mat = tf.math.confusion_matrix(labels=test_labels, predictions=test_predict).numpy()
-    con_mat_norm = np.around(con_mat.astype('float') / con_mat.sum(axis=1)[:, np.newaxis], decimals=2)
+    try:
+        test_predict = list(map(np.argmax, test_predict) )
+        con_mat = tf.math.confusion_matrix(labels=test_labels, predictions=test_predict).numpy()
+        con_mat_norm = np.around(con_mat.astype('float') / con_mat.sum(axis=1)[:, np.newaxis], decimals=2)
 
-    classes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    con_mat_df = pd.DataFrame(con_mat_norm,
-                         index = classes,
-                         columns = classes)
+        classes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        con_mat_df = pd.DataFrame(con_mat_norm,
+                             index = classes,
+                             columns = classes)
 
-    figure = plt.figure(figsize=(8, 8))
-    sns.heatmap(con_mat_df, annot=True,cmap=plt.cm.Blues)
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.show()
+        figure = plt.figure(figsize=(8, 8))
+        sns.heatmap(con_mat_df, annot=True,cmap=plt.cm.Blues)
+        plt.tight_layout()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
+        plt.show()
+    except ValueError:
+        print('ВНИМАНИЕ: Для построения confusion matrix в директории должно быть по меньшей мере 10 изображений')
 
 def get_json(test_predict, test_labels):
     """
@@ -105,7 +117,7 @@ def show_dimage(image):
     """
     Пример цифрового отображения цифры
     """
-    if image[0][0] is np.float64:
+    if not _is_int(image[0][0]):
         image = image * 255
 
     for i in range( len( image ) ):
@@ -124,3 +136,16 @@ def show_gimage(image):
     plt.colorbar()
     plt.grid(False)
     plt.show()
+
+def _is_int(num):
+    if '.' in str(num):
+        return False
+    return True
+
+if __name__ == '__main__':
+
+    (train_images, train_labels), (test_images, test_labels) = get_data()
+    temp = test_images[0]
+
+    show_dimage(temp)
+    print(test_labels[0])
