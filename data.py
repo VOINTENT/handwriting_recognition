@@ -64,7 +64,7 @@ def get_own_data():
             for j in range( len(imgarr[i]) ):
                 imgarr[i][j] = 255 - imgarr[i][j]
         test_images.append(imgarr)
-        test_labels.append( int(file.split('.')[0]) )
+        test_labels.append( int(file.split('.')[0][0]) )
 
     test_labels = np.array(test_labels)
     test_images = np.array(test_images)
